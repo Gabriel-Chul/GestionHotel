@@ -15,7 +15,7 @@ public class Login extends JFrame {
     private final JButton loginButton;
 
     public Login() {
-        super("Login de Hotel - Ultra Pro 3D");
+        super("Inciar Sesión - Hotel Primavera");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(950, 650);
         setLocationRelativeTo(null);
