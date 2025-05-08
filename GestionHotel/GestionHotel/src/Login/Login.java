@@ -1,33 +1,37 @@
+package Login;
+
+import Dao.UsuarioDAO;
+import Dashboard.Dashboard;
 import javax.swing.*;
 import com.formdev.flatlaf.FlatIntelliJLaf;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.net.URL;
 
 public class Login extends JFrame {
-    private JTextField userText;
-    private JPasswordField passwordField;
+    private final JTextField userText;
+    private final JPasswordField passwordField;
+    private final JButton loginButton;
 
     public Login() {
-        try {
-            UIManager.setLookAndFeel(new FlatIntelliJLaf());
-        } catch (Exception e) {
-            System.out.println("Error al cargar FlatLaf: " + e.getMessage());
-        }
-
-        setTitle("Login de Hotel - Ultra Pro 3D");
-        setSize(950, 650);
+        super("Login de Hotel - Ultra Pro 3D");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(950, 650);
         setLocationRelativeTo(null);
         setResizable(false);
 
-        // Fondo con imagen y overlay de color para efecto blur
+        try {
+            UIManager.setLookAndFeel(new FlatIntelliJLaf());
+        } catch (Exception e) {
+            System.err.println("Error al cargar FlatLaf: " + e.getMessage());
+        }
+
         JLayeredPane layeredPane = new JLayeredPane();
         layeredPane.setPreferredSize(new Dimension(950, 650));
         setContentPane(layeredPane);
 
+        // Fondo con imagen
         try {
             URL imageUrl = new URL("https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=950&q=80");
             ImageIcon backgroundIcon = new ImageIcon(imageUrl);
@@ -35,8 +39,9 @@ public class Login extends JFrame {
             backgroundLabel.setBounds(0, 0, 950, 650);
             layeredPane.add(backgroundLabel, Integer.valueOf(0));
         } catch (Exception e) {
-            System.out.println("Error al cargar la imagen: " + e.getMessage());
+            System.err.println("Error al cargar la imagen de fondo: " + e.getMessage());
         }
+
         // Overlay para efecto blur y color
         JPanel overlay = new JPanel() {
             @Override
@@ -51,7 +56,96 @@ public class Login extends JFrame {
         overlay.setOpaque(false);
         layeredPane.add(overlay, Integer.valueOf(1));
 
-        // Carousel de fotos de habitaciones (carga asíncrona robusta)
+        // Carousel de fotos de habitaciones
+        JPanel carouselPanel = crearCarouselPanel();
+        layeredPane.add(carouselPanel, Integer.valueOf(2));
+
+        // Panel central 3D con reflejo
+        JPanel glassPanel = crearGlassPanel();
+        layeredPane.add(glassPanel, Integer.valueOf(3));
+
+        // Pie de página
+        JLabel footer = new JLabel("© 2025 Hotel Primavera. Todos los derechos reservados.");
+        footer.setBounds(0, 610, 950, 30);
+        footer.setHorizontalAlignment(SwingConstants.CENTER);
+        footer.setForeground(new Color(255,255,255,180));
+        footer.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        layeredPane.add(footer, Integer.valueOf(4));
+
+        // Animación de entrada del panel central
+        animarEntradaPanel(glassPanel);
+
+        setVisible(true);
+
+        // --- Componentes del panel de login ---
+        userText = new JTextField();
+        passwordField = new JPasswordField();
+        loginButton = crearBotonLogin();
+
+        // Avatar
+        JLabel avatar = new JLabel("Cargando...");
+        avatar.setBounds(135, 10, 100, 100);
+        avatar.setHorizontalAlignment(SwingConstants.CENTER);
+        glassPanel.add(avatar);
+        cargarAvatarAsync(avatar);
+
+        // Título
+        JLabel titleLabel = new JLabel("Bienvenido al Hotel Primavera");
+        titleLabel.setBounds(30, 120, 310, 36);
+        titleLabel.setFont(new Font("Montserrat", Font.BOLD, 28));
+        titleLabel.setForeground(new Color(0, 102, 204));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        glassPanel.add(titleLabel);
+
+        // Usuario
+        JLabel userIcon = new JLabel();
+        try {
+            userIcon.setIcon(new ImageIcon(new URL("https://cdn-icons-png.flaticon.com/512/1077/1077114.png")));
+        } catch (Exception e) {}
+        userIcon.setBounds(40, 180, 32, 32);
+        glassPanel.add(userIcon);
+
+        userText.setBounds(80, 180, 250, 32);
+        userText.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        userText.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(0, 102, 204), 1, true),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        userText.setOpaque(false);
+        glassPanel.add(userText);
+
+        // Contraseña
+        JLabel passIcon = new JLabel();
+        try {
+            passIcon.setIcon(new ImageIcon(new URL("https://cdn-icons-png.flaticon.com/512/3064/3064155.png")));
+        } catch (Exception e) {}
+        passIcon.setBounds(40, 230, 32, 32);
+        glassPanel.add(passIcon);
+
+        passwordField.setBounds(80, 230, 250, 32);
+        passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        passwordField.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(0, 102, 204), 1, true),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
+        passwordField.setOpaque(false);
+        glassPanel.add(passwordField);
+
+        // Botón de login
+        loginButton.setBounds(105, 290, 160, 50);
+        glassPanel.add(loginButton);
+
+        // Accesibilidad con teclado
+        userText.addActionListener(e -> loginButton.doClick());
+        passwordField.addActionListener(e -> loginButton.doClick());
+        getRootPane().setDefaultButton(loginButton);
+
+        // Acción del botón de login
+        loginButton.addActionListener(e -> procesarLogin());
+
+        // Mover el foco al campo de usuario al iniciar
+        userText.requestFocusInWindow();
+    }
+
+    private JPanel crearCarouselPanel() {
         JPanel carouselPanel = new JPanel(null) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -63,6 +157,7 @@ public class Login extends JFrame {
         };
         carouselPanel.setOpaque(false);
         carouselPanel.setBounds(570, 110, 340, 420);
+
         String[] urls = {
             "https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=400&q=80",
             "https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&w=400&q=80",
@@ -105,7 +200,6 @@ public class Login extends JFrame {
                 }
             }.execute();
         }
-        // Botones para cambiar foto
         JButton prev = new JButton("<");
         JButton next = new JButton(">");
         prev.setBounds(10, 200, 50, 40);
@@ -122,7 +216,6 @@ public class Login extends JFrame {
         next.setBorder(BorderFactory.createLineBorder(Color.WHITE, 2, true));
         carouselPanel.add(prev);
         carouselPanel.add(next);
-        layeredPane.add(carouselPanel, Integer.valueOf(2));
         final int[] idx = {0};
         prev.addActionListener(e -> {
             photos[idx[0]].setVisible(false);
@@ -134,23 +227,22 @@ public class Login extends JFrame {
             idx[0] = (idx[0] + 1) % photos.length;
             photos[idx[0]].setVisible(true);
         });
+        return carouselPanel;
+    }
 
-        // Panel central 3D con reflejo
+    private JPanel crearGlassPanel() {
         JPanel glassPanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                // Sombra doble para efecto 3D
                 g2.setColor(new Color(0, 0, 0, 80));
                 g2.fillRoundRect(18, 18, getWidth() - 36, getHeight() - 36, 60, 60);
                 g2.setColor(new Color(0, 0, 0, 40));
                 g2.fillRoundRect(9, 9, getWidth() - 18, getHeight() - 18, 60, 60);
-                // Gradiente translúcido
                 GradientPaint gp = new GradientPaint(0, 0, new Color(255,255,255,245), getWidth(), getHeight(), new Color(220,230,255,220));
                 g2.setPaint(gp);
                 g2.fillRoundRect(0, 0, getWidth() - 8, getHeight() - 8, 60, 60);
-                // Reflejo superior
                 GradientPaint reflection = new GradientPaint(0, 0, new Color(255,255,255,120), 0, 60, new Color(255,255,255,0));
                 g2.setPaint(reflection);
                 g2.fillRoundRect(0, 0, getWidth() - 8, 60, 60, 60);
@@ -160,13 +252,10 @@ public class Login extends JFrame {
         glassPanel.setLayout(null);
         glassPanel.setBounds(120, 110, 370, 430);
         glassPanel.setOpaque(false);
-        layeredPane.add(glassPanel, Integer.valueOf(3));
+        return glassPanel;
+    }
 
-        // Avatar circular con borde, sombra y brillo (carga asíncrona robusta)
-        JLabel avatar = new JLabel("Cargando...");
-        avatar.setBounds(135, 10, 100, 100);
-        avatar.setHorizontalAlignment(SwingConstants.CENTER);
-        glassPanel.add(avatar);
+    private void cargarAvatarAsync(JLabel avatar) {
         new SwingWorker<ImageIcon, Void>() {
             @Override
             protected ImageIcon doInBackground() {
@@ -192,53 +281,12 @@ public class Login extends JFrame {
                 }
             }
         }.execute();
+    }
 
-        // Título
-        JLabel titleLabel = new JLabel("Bienvenido al Hotel");
-        titleLabel.setBounds(30, 120, 310, 36);
-        titleLabel.setFont(new Font("Montserrat", Font.BOLD, 28));
-        titleLabel.setForeground(new Color(0, 102, 204));
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        glassPanel.add(titleLabel);
-
-        // Usuario con ícono
-        JLabel userIcon = new JLabel();
-        try {
-            userIcon.setIcon(new ImageIcon(new URL("https://cdn-icons-png.flaticon.com/512/1077/1077114.png")));
-        } catch (Exception e) {}
-        userIcon.setBounds(40, 180, 32, 32);
-        glassPanel.add(userIcon);
-
-        userText = new JTextField();
-        userText.setBounds(80, 180, 250, 32);
-        userText.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        userText.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(0, 102, 204), 1, true),
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
-        userText.setOpaque(false);
-        glassPanel.add(userText);
-
-        // Contraseña con ícono
-        JLabel passIcon = new JLabel();
-        try {
-            passIcon.setIcon(new ImageIcon(new URL("https://cdn-icons-png.flaticon.com/512/3064/3064155.png")));
-        } catch (Exception e) {}
-        passIcon.setBounds(40, 230, 32, 32);
-        glassPanel.add(passIcon);
-
-        passwordField = new JPasswordField();
-        passwordField.setBounds(80, 230, 250, 32);
-        passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        passwordField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(0, 102, 204), 1, true),
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)));
-        passwordField.setOpaque(false);
-        glassPanel.add(passwordField);
-
-        // Botón de Login con efecto 3D y animación de presión
-        JButton loginButton = new JButton("Iniciar Sesión") {
-            private Color hover = new Color(0, 102, 204);
-            private Color normal = new Color(0, 123, 255);
+    private JButton crearBotonLogin() {
+        return new JButton("Iniciar Sesión") {
+            private final Color hover = new Color(0, 102, 204);
+            private final Color normal = new Color(0, 123, 255);
             private boolean pressed = false;
             {
                 setBackground(normal);
@@ -277,43 +325,17 @@ public class Login extends JFrame {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 int yOffset = pressed ? 4 : 0;
-                // Sombra
                 g2.setColor(new Color(0,0,0,60));
                 g2.fillRoundRect(0, 6, getWidth(), getHeight()-4, 20, 20);
-                // Botón
                 g2.setColor(getBackground());
                 g2.fillRoundRect(0, yOffset, getWidth(), getHeight()-6, 20, 20);
                 super.paintComponent(g2);
                 g2.dispose();
             }
         };
-        loginButton.setBounds(105, 290, 160, 50);
-        loginButton.setHorizontalAlignment(SwingConstants.CENTER);
-        loginButton.setForeground(Color.WHITE);
-        loginButton.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        loginButton.setOpaque(false);
-        glassPanel.add(loginButton);
+    }
 
-        // Acción del botón
-        loginButton.addActionListener((ActionEvent e) -> {
-            String username = userText.getText();
-            String password = new String(passwordField.getPassword());
-            if ("admin".equals(username) && "1234".equals(password)) {
-                JOptionPane.showMessageDialog(this, "Inicio de sesión exitoso", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
-
-        // Pie de página
-        JLabel footer = new JLabel("© 2025 Hotel Pro. Todos los derechos reservados.");
-        footer.setBounds(0, 610, 950, 30);
-        footer.setHorizontalAlignment(SwingConstants.CENTER);
-        footer.setForeground(new Color(255,255,255,180));
-        footer.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        layeredPane.add(footer, Integer.valueOf(4));
-
-        // Animación de entrada del panel central
+    private void animarEntradaPanel(JPanel glassPanel) {
         Timer timer = new Timer(1, null);
         timer.addActionListener(new ActionListener() {
             int y = 650;
@@ -330,8 +352,77 @@ public class Login extends JFrame {
         });
         glassPanel.setLocation(120, 650);
         timer.start();
+    }
 
-        setVisible(true);
+    private void procesarLogin() {
+        String username = userText.getText().trim();
+        String password = new String(passwordField.getPassword());
+
+        // Validación: campos vacíos
+        if (username.isEmpty() || password.isEmpty()) {
+            mostrarMensaje("Debe completar todos los campos.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // Validación: usuario solo letras y números
+        if (!username.matches("[a-zA-Z0-9]+")) {
+            mostrarMensaje("El usuario solo puede contener letras y números.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // Validación: longitud mínima usuario
+        if (username.length() < 4) {
+            mostrarMensaje("El usuario debe tener al menos 4 caracteres.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // Validación: longitud máxima usuario
+        if (username.length() > 20) {
+            mostrarMensaje("El usuario no puede tener más de 20 caracteres.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // Validación: contraseña mínima
+        if (password.length() < 6) {
+            mostrarMensaje("La contraseña debe tener al menos 6 caracteres.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // Validación: contraseña máxima
+        if (password.length() > 32) {
+            mostrarMensaje("La contraseña no puede tener más de 32 caracteres.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // Validación: contraseña segura (mayúscula, minúscula y número)
+        if (!password.matches(".*[A-Z].*") || !password.matches(".*[a-z].*") || !password.matches(".*\\d.*")) {
+            mostrarMensaje("La contraseña debe contener mayúsculas, minúsculas y números.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // Validación: no permitir espacios en usuario ni contraseña
+        if (username.contains(" ") || password.contains(" ")) {
+            mostrarMensaje("Usuario y contraseña no pueden contener espacios.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // Validación: usuario y contraseña no pueden ser iguales
+        if (username.equals(password)) {
+            mostrarMensaje("El usuario y la contraseña no pueden ser iguales.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        // Validación: contraseña no puede ser igual a "password"
+        if (password.equalsIgnoreCase("password")) {
+            mostrarMensaje("La contraseña no puede ser 'password'.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Validación real contra la base de datos
+        UsuarioDAO dao = new UsuarioDAO();
+        if (dao.autenticar(username, password)) {
+            mostrarMensaje("Inicio de sesión exitoso", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+            // Aquí puedes abrir la siguiente ventana
+            this.dispose();
+            new Dashboard();
+        } else {
+            mostrarMensaje("Usuario o contraseña incorrectos", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void mostrarMensaje(String mensaje, String titulo, int tipo) {
+        JOptionPane.showMessageDialog(this, mensaje, titulo, tipo);
     }
 
     // Utilidad para hacer imagen circular con brillo
