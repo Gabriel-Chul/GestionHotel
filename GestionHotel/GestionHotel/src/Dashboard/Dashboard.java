@@ -2,8 +2,10 @@ package Dashboard;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 
 public class Dashboard extends JFrame {
+    private JPanel areaTrabajo;
 
     public Dashboard() {
         super("Sistema de Hotel - Recepción");
@@ -48,6 +50,10 @@ public class Dashboard extends JFrame {
                     btn.setBackground(new Color(45, 52, 54));
                 }
             });
+            
+            // Agregar ActionListener para cada botón
+            btn.addActionListener(e -> manejarClickMenu(op));
+            
             menuPanel.add(btn);
         }
         menuPanel.add(Box.createVerticalGlue());
@@ -75,7 +81,7 @@ public class Dashboard extends JFrame {
         mainPanel.add(cardsPanel, BorderLayout.NORTH);
 
         // Área de trabajo central con sombra y separación
-        JPanel areaTrabajo = new JPanel() {
+        areaTrabajo = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -98,11 +104,93 @@ public class Dashboard extends JFrame {
         areaLabel.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
         areaTrabajo.add(areaLabel, BorderLayout.NORTH);
 
+        // Mostrar contenido inicial
+        mostrarContenidoInicial();
+
         mainPanel.add(areaTrabajo, BorderLayout.CENTER);
 
         add(mainPanel, BorderLayout.CENTER);
 
         setVisible(true);
+    }
+
+    private void manejarClickMenu(String opcion) {
+        areaTrabajo.removeAll();
+        
+        switch(opcion) {
+            case "Check-In":
+                mostrarFormularioCheckIn();
+                break;
+            case "Reservaciones":
+                // Implementar lógica para reservaciones
+                mostrarMensaje("Funcionalidad de Reservaciones en desarrollo");
+                break;
+            case "Disponibilidad":
+                // Implementar lógica para disponibilidad
+                mostrarMensaje("Funcionalidad de Disponibilidad en desarrollo");
+                break;
+            case "Check-Out":
+                mostrarFormularioCheckOut();
+                break;
+            case "Reportes":
+                // Implementar lógica para reportes
+                mostrarMensaje("Funcionalidad de Reportes en desarrollo");
+                break;
+            default:
+                mostrarContenidoInicial();
+        }
+        
+        areaTrabajo.revalidate();
+        areaTrabajo.repaint();
+    }
+
+    private void mostrarFormularioCheckIn() {
+        areaTrabajo.removeAll();
+        CheckInPanel checkInPanel = new CheckInPanel();
+        areaTrabajo.add(checkInPanel, BorderLayout.CENTER);
+        areaTrabajo.revalidate();
+        areaTrabajo.repaint();
+    }
+    
+    private void mostrarFormularioCheckOut() {
+        areaTrabajo.removeAll();
+        CheckOutPanel checkOutPanel = new CheckOutPanel();
+        areaTrabajo.add(checkOutPanel, BorderLayout.CENTER);
+        areaTrabajo.revalidate();
+        areaTrabajo.repaint();
+    }
+    
+
+    private void mostrarContenidoInicial() {
+        areaTrabajo.removeAll();
+        
+        JLabel welcomeLabel = new JLabel("Bienvenido al Sistema de Gestión Hotelera");
+        welcomeLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        welcomeLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        welcomeLabel.setBorder(BorderFactory.createEmptyBorder(50, 0, 0, 0));
+        
+        JLabel instructionLabel = new JLabel("Seleccione una opción del menú lateral para comenzar");
+        instructionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
+        instructionLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        instructionLabel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.add(welcomeLabel, BorderLayout.NORTH);
+        centerPanel.add(instructionLabel, BorderLayout.CENTER);
+        centerPanel.setOpaque(false);
+        
+        areaTrabajo.add(centerPanel, BorderLayout.CENTER);
+    }
+
+    private void mostrarMensaje(String mensaje) {
+        areaTrabajo.removeAll();
+        
+        JLabel messageLabel = new JLabel(mensaje);
+        messageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 18));
+        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        messageLabel.setBorder(BorderFactory.createEmptyBorder(50, 0, 0, 0));
+        
+        areaTrabajo.add(messageLabel, BorderLayout.CENTER);
     }
 
     private JPanel crearCard(String titulo, String valor, Color color, String icono) {
