@@ -35,6 +35,7 @@ public class CheckOutPanel extends JPanel {
         Font labelFont = new Font("Segoe UI", Font.PLAIN, 14);
         Font fieldFont = new Font("Segoe UI", Font.PLAIN, 14);
         
+         // 1. Selector de reservación
         JLabel lblReservacion = new JLabel("Reservación:");
         lblReservacion.setFont(labelFont);
         formPanel.add(lblReservacion);
@@ -44,7 +45,8 @@ public class CheckOutPanel extends JPanel {
         cargarReservacionesConCheckInActivo();
         cmbReservaciones.addActionListener(e -> cargarDetallesCompletos());
         formPanel.add(cmbReservaciones);
-        
+
+        // 2. Información de estado de la reserva
         JLabel lblEstado = new JLabel("Estado:");
         lblEstado.setFont(labelFont);
         formPanel.add(lblEstado);
@@ -53,6 +55,7 @@ public class CheckOutPanel extends JPanel {
         lblEstadoReserva.setFont(fieldFont);
         formPanel.add(lblEstadoReserva);
         
+        // 3. Información de hora de entrada
         JLabel lblHoraEntradaLabel = new JLabel("Hora de entrada:");
         lblHoraEntradaLabel.setFont(labelFont);
         formPanel.add(lblHoraEntradaLabel);
@@ -60,7 +63,8 @@ public class CheckOutPanel extends JPanel {
         lblHoraEntrada = new JLabel("--:--");
         lblHoraEntrada.setFont(fieldFont);
         formPanel.add(lblHoraEntrada);
-        
+
+        // 4. Información de precio por noche
         JLabel lblPrecioNoche = new JLabel("Precio por noche:");
         lblPrecioNoche.setFont(labelFont);
         formPanel.add(lblPrecioNoche);
@@ -69,6 +73,7 @@ public class CheckOutPanel extends JPanel {
         lblDetallePrecio.setFont(fieldFont);
         formPanel.add(lblDetallePrecio);
         
+         // 5. Información de total a pagar
         JLabel lblTotalLabel = new JLabel("Total a pagar:");
         lblTotalLabel.setFont(labelFont);
         formPanel.add(lblTotalLabel);
@@ -101,6 +106,7 @@ public class CheckOutPanel extends JPanel {
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
+    //Limpia la pantalla y muestra un mensaje de operación cancelada
     private void limpiarPantalla() {
         cmbReservaciones.setSelectedIndex(-1);
         limpiarDetalles();
@@ -108,10 +114,11 @@ public class CheckOutPanel extends JPanel {
             "Operación cancelada. Los campos han sido limpiados.", 
             "Cancelado", JOptionPane.INFORMATION_MESSAGE);
     }
-    
+    //Carga las reservaciones que tienen un check-in activo en el combobox
     private void cargarReservacionesConCheckInActivo() {
         cmbReservaciones.removeAllItems();
         try (Connection conn = DBConnection.getConnection()) {
+            // Consulta SQL que obtiene reservaciones con check-in activo
             String sql = "SELECT r.id, h.numero, r.nombre_cliente, r.fecha_checkin, r.fecha_checkout, r.estado " +
                          "FROM Reservaciones r " +
                          "JOIN Habitaciones h ON r.habitacion_id = h.id " +
@@ -133,7 +140,7 @@ public class CheckOutPanel extends JPanel {
                              new SimpleDateFormat("dd/MM/yyyy").format(rs.getDate("fecha_checkout")) + ")";
                 cmbReservaciones.addItem(item);
             }
-            
+            // Mensaje informativo si no hay reservaciones con check-in activo
             if (count == 0) {
                 JOptionPane.showMessageDialog(this, 
                     "No hay reservaciones con check-in activo disponibles.\n" +
@@ -148,7 +155,8 @@ public class CheckOutPanel extends JPanel {
                 "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
+    //Carga los detalles completos de la reservación seleccionada
+    //actualiza los campos de estado, hora de entrada, precio y total
     private void cargarDetallesCompletos() {
         if (cmbReservaciones.getSelectedItem() == null) {
             limpiarDetalles();
@@ -158,7 +166,7 @@ public class CheckOutPanel extends JPanel {
         try (Connection conn = DBConnection.getConnection()) {
             String selected = cmbReservaciones.getSelectedItem().toString();
             int reservacionId = Integer.parseInt(selected.split(" - ")[0]);
-
+             // Consulta SQL para obtener detalles completos
             String sql = "SELECT r.estado, ci.hora_entrada, h.precio, h.numero, " +
                          "DATEDIFF(day, r.fecha_checkin, r.fecha_checkout) AS dias " +
                          "FROM Reservaciones r " +
@@ -171,14 +179,17 @@ public class CheckOutPanel extends JPanel {
                 ResultSet rs = pstmt.executeQuery();
                 
                 if (rs.next()) {
+                // Actualizar campos con la información obtenida
                     lblEstadoReserva.setText(rs.getString("estado"));
                     lblHoraEntrada.setText(rs.getString("hora_entrada"));
 
+                    // Calcular total a pagar
                     double precioPorNoche = rs.getDouble("precio");
                     int dias = rs.getInt("dias");
                     dias = dias < 1 ? 1 : dias;
                     double total = dias * precioPorNoche;
-                    
+
+                    // Mostrar información formateada
                     lblDetallePrecio.setText(String.format("$%.2f (Hab. %s)", precioPorNoche, rs.getString("numero")));
                     lblTotal.setText(String.format("$%.2f", total));
                 } else {
@@ -196,6 +207,7 @@ public class CheckOutPanel extends JPanel {
         }
     }
     
+    //Limpia los campos de detalles de la reservación
     private void limpiarDetalles() {
         lblEstadoReserva.setText("-");
         lblHoraEntrada.setText("--:--");
@@ -203,6 +215,9 @@ public class CheckOutPanel extends JPanel {
         lblTotal.setText("$0.00");
     }
     
+    //Realiza el proceso completo de check-out, confirma la operación con el usuario
+    //finaliza el check-in, actualiza el estado de la reservación
+    //libera la habitación y muestra resumen y actualiza la interfaz
     private void realizarCheckOut() {
         if (cmbReservaciones.getSelectedItem() == null) {
             JOptionPane.showMessageDialog(this, 
@@ -210,7 +225,7 @@ public class CheckOutPanel extends JPanel {
                 "Validación", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+        // Confirmar con el usuario antes de proceder
         int confirmacion = JOptionPane.showConfirmDialog(this, 
             "¿Está seguro que desea realizar el check-out de esta reservación?",
             "Confirmar Check-Out", JOptionPane.YES_NO_OPTION);
@@ -221,10 +236,10 @@ public class CheckOutPanel extends JPanel {
         
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
-            
+            // Extraer ID de reservación del texto seleccionado
             String selected = cmbReservaciones.getSelectedItem().toString();
             int reservacionId = Integer.parseInt(selected.split(" - ")[0]);
-            
+            // Obtiene detalles necesarios para el resumen
             Object[] detalles = obtenerDetallesReserva(conn, reservacionId);
             if (detalles == null) {
                 conn.rollback();
@@ -236,22 +251,24 @@ public class CheckOutPanel extends JPanel {
             int dias = (int) detalles[2];
             double total = dias * precioPorNoche;
 
+             // 1. Finalizar check-in
             if (!finalizarCheckIn(conn, reservacionId)) {
                 conn.rollback();
                 throw new SQLException("No se pudo finalizar el check-in");
             }
-
+            // 2. Actualizar estado de reservación
             if (!actualizarReservacion(conn, reservacionId)) {
                 conn.rollback();
                 throw new SQLException("No se pudo actualizar la reservación");
             }
-
+            // 3. Liberar habitación
             if (!liberarHabitacion(conn, reservacionId)) {
                 conn.rollback();
                 throw new SQLException("No se pudo liberar la habitación");
             }
             
             conn.commit();
+            // Mostrar resumen y actualizar interfaz
             mostrarResumenCheckOut(numeroHabitacion, precioPorNoche, dias, total);
             actualizarInterfaz();
             
@@ -261,7 +278,7 @@ public class CheckOutPanel extends JPanel {
                 "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
+    //Obtiene detalles importantes de la reservación para el resumen
     private Object[] obtenerDetallesReserva(Connection conn, int reservacionId) throws SQLException {
         String sql = "SELECT h.numero, h.precio, " +
                      "DATEDIFF(day, r.fecha_checkin, r.fecha_checkout) AS dias " +
@@ -286,6 +303,7 @@ public class CheckOutPanel extends JPanel {
         return null;
     }
     
+    //Finaliza el check-in cambiando su estado a 'Finalizado'
     private boolean finalizarCheckIn(Connection conn, int reservacionId) throws SQLException {
         String sql = "UPDATE CheckIns SET estado = 'Finalizado'" +
                      "WHERE reservacion_id = ? AND estado = 'Activo'";
@@ -299,6 +317,7 @@ public class CheckOutPanel extends JPanel {
         }
     }
     
+    //Actualiza el estado de la reservación a 'Finalizada'
     private boolean actualizarReservacion(Connection conn, int reservacionId) throws SQLException {
         String sql = "UPDATE Reservaciones SET estado = 'Finalizada' WHERE id = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -307,6 +326,7 @@ public class CheckOutPanel extends JPanel {
         }
     }
     
+    //Libera la habitación cambiando su estado a 'Disponible'
     private boolean liberarHabitacion(Connection conn, int reservacionId) throws SQLException {
         String sql = "UPDATE Habitaciones SET estado = 'Disponible' " +
                      "WHERE id = (SELECT habitacion_id FROM Reservaciones WHERE id = ?)";
@@ -316,6 +336,7 @@ public class CheckOutPanel extends JPanel {
         }
     }
     
+    //Muestra un resumen detallado del check-out realizado
     private void mostrarResumenCheckOut(String numeroHabitacion, double precioPorNoche, int dias, double total) {
         String mensaje = String.format(
             "<html><b>Check-Out realizado exitosamente</b><br><br>" +
@@ -330,8 +351,11 @@ public class CheckOutPanel extends JPanel {
         JOptionPane.showMessageDialog(this, mensaje, "Éxito", JOptionPane.INFORMATION_MESSAGE);
     }
     
+    //Actualiza la interfaz después de un check-out exitoso
     private void actualizarInterfaz() {
+        // Recargar lista de reservaciones
         cargarReservacionesConCheckInActivo();
+         // Limpiar campos de información
         limpiarDetalles();
     }
 }

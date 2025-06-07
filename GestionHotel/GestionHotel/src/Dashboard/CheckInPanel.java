@@ -60,11 +60,12 @@ public class CheckInPanel extends JPanel {
         add(formPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
-    
+    //Carga las reservaciones pendientes de check-in en el combobox,
+   //filtra solo reservaciones confirmadas sin check-in activo asociado
    private void cargarReservacionesPendientes() {
     cmbReservaciones.removeAllItems();
     try (Connection conn = DBConnection.getConnection()) {
-        // Consulta modificada para mostrar reservaciones confirmadas sin check-in activo
+        // Consulta para mostrar reservaciones confirmadas sin check-in activo
         String sql = "SELECT r.id, h.numero, r.nombre_cliente, r.fecha_checkin, r.fecha_checkout " +
                      "FROM Reservaciones r " +
                      "JOIN Habitaciones h ON r.habitacion_id = h.id " +
@@ -74,7 +75,8 @@ public class CheckInPanel extends JPanel {
         
         Statement stmt = conn.createStatement();
         ResultSet rs = stmt.executeQuery(sql);
-        
+
+        // Procesar cada resultado y agregarlo al combobox
         while (rs.next()) {
             String item = rs.getString("id") + " - Hab. " + rs.getString("numero") + " - " + 
                          rs.getString("nombre_cliente") + " (" + 
@@ -83,6 +85,7 @@ public class CheckInPanel extends JPanel {
             cmbReservaciones.addItem(item);
         }
         
+        // Mensaje informativo si no hay reservaciones
         if (cmbReservaciones.getItemCount() == 0) {
             JOptionPane.showMessageDialog(this, 
                 "No hay reservaciones confirmadas pendientes de check-in", 
@@ -94,7 +97,9 @@ public class CheckInPanel extends JPanel {
             "Error", JOptionPane.ERROR_MESSAGE);
     }
 }
-    
+
+//Carga las horas disponibles para check-in en intervalos de 30 minutos
+//con rango desde las 8:00 hasta las 22:00 horas
     private void cargarHorasDisponibles() {
         cmbHora.removeAllItems();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
@@ -104,6 +109,8 @@ public class CheckInPanel extends JPanel {
         }
     }
     
+//Registra el check-in en la base de datos crea registro en CheckIns
+//actualiza estado de habitación a "Ocupada"
     private void registrarCheckIn() {
         if (cmbReservaciones.getSelectedItem() == null || cmbHora.getSelectedItem() == null) {
             JOptionPane.showMessageDialog(this, "Seleccione una reservación y hora de entrada", 
@@ -113,19 +120,19 @@ public class CheckInPanel extends JPanel {
         
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
-            
+        
             try {
                 
                 String selected = cmbReservaciones.getSelectedItem().toString();
                 int reservacionId = Integer.parseInt(selected.split(" - ")[0]);
                 String horaEntrada = cmbHora.getSelectedItem().toString();
-
+                // 1. Insertar registro de check-in
                 String sqlCheckIn = "INSERT INTO CheckIns (reservacion_id, hora_entrada, estado) VALUES (?, ?, 'Activo')";
                 try (PreparedStatement pstmt = conn.prepareStatement(sqlCheckIn, Statement.RETURN_GENERATED_KEYS)) {
                     pstmt.setInt(1, reservacionId);
                     pstmt.setString(2, horaEntrada);
                     pstmt.executeUpdate();
-
+                    // 2. Actualizar estado de la habitación a "Ocupada"
                     String sqlHabitacion = "UPDATE Habitaciones SET estado = 'Ocupada' " +
                                           "WHERE id = (SELECT habitacion_id FROM Reservaciones WHERE id = ?)";
                     try (PreparedStatement pstmtHab = conn.prepareStatement(sqlHabitacion)) {
@@ -151,7 +158,7 @@ public class CheckInPanel extends JPanel {
                 "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
+    // Resetear formulario y actualizar datos
     private void limpiarFormulario() {
         cmbReservaciones.setSelectedItem(null);
         cmbHora.setSelectedItem(null);
