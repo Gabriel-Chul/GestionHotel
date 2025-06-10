@@ -3,11 +3,13 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/xampp/htdocs/GitHub/GestionHotel/GestionHotel/GestionHotel/src/Login/Login.java</file>
-            <file>file:/C:/xampp/htdocs/GitHub/GestionHotel/GestionHotel/GestionHotel/src/Config/dbconfig.properties</file>
-            <file>file:/C:/xampp/htdocs/GitHub/GestionHotel/GestionHotel/GestionHotel/src/Config/DBConnection.java</file>
-            <file>file:/C:/xampp/htdocs/GitHub/GestionHotel/GestionHotel/GestionHotel/src/Dao/UsuarioDAO.java</file>
-            <file>file:/C:/xampp/htdocs/GitHub/GestionHotel/GestionHotel/GestionHotel/src/Dashboard/Dashboard.java</file>
+            <file>file:/C:/Users/Macdonio/Documents/NetBeansProjects/GestionHotel/GestionHotel/GestionHotel/src/Dashboard/Dashboard.java</file>
+            <file>file:/C:/Users/Macdonio/Documents/NetBeansProjects/GestionHotel/GestionHotel/GestionHotel/src/Dashboard/ReportesPanel.java</file>
+            <file>file:/C:/Users/Macdonio/Documents/NetBeansProjects/GestionHotel/GestionHotel/GestionHotel/src/Config/DBConnection.java</file>
+            <file>file:/C:/Users/Macdonio/Documents/NetBeansProjects/GestionHotel/GestionHotel/GestionHotel/src/Dashboard/CheckInPanel.java</file>
+            <file>file:/C:/Users/Macdonio/Documents/NetBeansProjects/GestionHotel/GestionHotel/GestionHotel/src/Config/dbconfig.properties</file>
+            <file>file:/C:/Users/Macdonio/Documents/NetBeansProjects/GestionHotel/GestionHotel/GestionHotel/src/Dashboard/CheckOutPanel.java</file>
+            <file>jar:file:/C:/Users/Macdonio/Documents/NetBeansProjects/GestionHotel/GestionHotel/GestionHotel/libs/mssql-jdbc-12.10.0.jre11-sources.jar!/com/microsoft/sqlserver/jdbc/SQLServerConnection.java</file>
         </group>
     </open-files>
 </project-private>
